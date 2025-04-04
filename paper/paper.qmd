@@ -1,0 +1,921 @@
+---
+title: "Climate-Informed Cocoa Price Forecasting: A Comparative Analysis of Time Series and Machine Learning Methods"
+author: 
+  - Yuqi An
+  - Tommy Fu
+  - Jumbo Jiang
+  - Steven Li
+date: today
+date-format: long
+abstract: "This study examines the forecasting of cocoa futures prices by integrating climate data from Ghana with various time series and machine learning approaches to aid stakeholders' decision-making. We analyze daily price data from 1994-2025 alongside climate variables using multiple modeling techniques, including Linear Regression, ARIMA variants, and machine learning methods with cross-validated 90-day forecasting horizons. Our findings reveal that simpler Linear Regression models consistently outperformed more complex approaches across all metrics, achieving approximately 50% lower error rates (RMSE = 0.0534) than the worst-performing models after appropriate logarithmic transformation and differencing. These results suggest that preprocessing techniques and model parsimony may be more crucial for accurate cocoa price forecasting than algorithmic complexity, offering practical implications for commodity traders and policymakers seeking reliable forecasting tools amid increasing market volatility."
+format:
+  pdf:
+    toc: true
+include-before: |
+  \newpage
+number-sections: true
+bibliography: references.bib
+---
+
+\newpage
+# Introduction {#sec-intro}
+Cocoa is a fundamental component of the global chocolate industry, shaping both national farming incomes and international commodity markets. Recent research has stressed the significant challenges relating to the prediction of cocoa prices; prices are impacted by inherent seasonal fluctuations, general economic conditions, and, more recently, climate change risks [@zhang2020forecasting]. Environmental factors, such as fluctuations in temperature and precipitation patterns, have been shown to impact cocoa yields, further affecting futures markets and creating high levels of uncertainty for producers, traders, and policymakers [@sukiyono2018cacao].
+
+Against this background, the present research considers cocoa price fluctuation forecasting and assessment by merging climatic information that involves variations in mean and extreme temperatures and rainfall severity with mainstream time series and machine learning methods. A critical component of the present work is the necessity to provide precise short and medium range forecasts that can serve as decision-support tools, from farming planting dates to policy-setting by governments and business buying decisions [@kumar2022econometric]. Precise forecasting against heightened marketplace volatility and climatic uncertainty reduces monetary risk as well as facilitates long-term agricultural and economic planning by economies that depend on cocoa output.
+
+Therefore, our current study seeks to:
+
+1. Examine major external determinants — namely, temperature, rainfall, and other climatological conditions influencing the variation in cocoa prices.
+2. Compare the forecasting performance of different predictive approaches, including classical time series models (e.g., SARIMA and linear regression with autocorrelated errors) and machine learning methods.
+ 3. Assess the model's robustness in real-world data settings with a focus on how climatic information can aid in enhancing or refining predictive accuracy.
+ 
+Despite its practical importance, forecasting cocoa prices presents notable challenges. The problem of data non-stationarity requires the use of transformations or differencing methods in order to satisfy critical model conditions, while the existence of missing values in daily climate data prevents the proper integration of data and reduces the sample average. In addition, the need to allow for short-run autocorrelation and occasional disturbances makes the model more complicated. By addressing these problems and increasingly adding exogenous variables, this study makes cocoa price behavior more understandable, hence aiding the industry and policymakers in the formation of more effective and well-informed policies.
+
+
+# Literature Review {#sec-lit-review}
+Time series forecasting and commodity price modeling have evolved significantly over recent decades, with researchers exploring various methodologies to improve forecasting accuracy. This section summarizes three published research on time series forecasting methods applied to agricultural commodities, with particular focus on cocoa price modeling.
+
+## Time Series Forecasting for Commodity Prices
+Agricultural commodity price forecasting has evolved from traditional statistical methods to sophisticated approaches with artificial intelligence capabilities. @zhang2020forecasting note that while ARIMA, exponential smoothing, and multivariate regression remain common, increasing price volatility has prompted development of self-learning models like neural networks, support vector regression, and extreme learning machines that often outperform traditional approaches. They emphasize the "no free lunch" theory, that no single model suits all commodities—and propose a selection framework incorporating time series features and forecast horizons based on 29 features of periodicity, nonlinearity, and complexity, which outperforms both individual models and simple averaging techniques.
+
+## Cocoa Price Forecasting Studies
+Research specific to cocoa price forecasting has demonstrated the effectiveness of time series approaches. @sukiyono2018cacao analyzed monthly cocoa price data (2008-2016) using ARIMA, Exponential Smoothing, and Decomposition models, evaluating them with MAD, MAPE, and MSD metrics. Their findings showed ARIMA as most appropriate for both world and domestic markets, consistent with earlier studies on agricultural commodities. Kumar et al. (2022) expanded this work by developing econometric models for different cocoa bean types, using ARIMA and VAR to analyze monthly prices (2009-2020). After stationarity testing and model selection via AIC and SBIC, they identified ARIMA(1,1,0) for dry cocoa beans and ARIMA(1,1,2) for wet beans. Their VAR(1) model revealed significant influence of US and London futures prices on Indian dry cocoa prices, establishing connections between international futures and domestic markets.
+
+| **Study** | **Time Period** | **Methodology** | **Key Findings** |
+| :-- | :-- | :----- | :----- |
+| @zhang2020forecasting | Various Datasets  | Model selection framework with RF, SVM, ANN, SVR, and ELM as candidate models | Model selection framework outperforms both individual models and simple averaging; forecast horizon significantly impacts model performance |
+| @kumar2022econometric | 2008-2016 | ARIMA, Exponential Smoothing | ARIMA is the most appropriate method for both world and domestic cocoa prices |
+| @sukiyono2018cacao | 2009-2020 | ARIMA, VAR | ARIMA(1,1,0) is optimal for dry cocoa beans; ARIMA(1,1,2) for wet cocoa beans; ICE futures prices influence domestic dry cocoa prices |
+
+## Gaps in Existing Literature
+The literature shows a clear progression from classical time series methods to hybrid approaches combining traditional models with machine learning techniques. @zhang2020forecasting demonstrates how classical forecasting methods can be enhanced through machine learning for model selection, while @kumar2022econometric bridges classical and modern approaches by combining ARIMA with VAR analysis to establish market linkages.
+
+Despite these advancements, several gaps remain:
+
+1. @zhang2020forecasting highlights that forecast models perform differently across horizons, yet this factor is seldom considered in studies.  
+2. @kumar2022econometric notes limited research on forecasting models for specific cocoa varieties and a lack of commodity-specific futures in Indian exchanges.  
+3. @sukiyono2018cacao identify a need for more comprehensive comparative studies evaluating multiple forecasting methodologies for cocoa prices.
+
+## Building Upon Previous Methods
+Our research extends previous studies by incorporating multiple forecast horizons as recommended by @zhang2020forecasting, evaluating both classical time series and machine learning approaches to assess whether sophisticated techniques improve cocoa price forecasting accuracy [@sukiyono2018cacao]. 
+
+We apply model selection frameworks to agricultural commodity data, addressing a gap identified by @zhang2020forecasting, while incorporating external climate data from Ghana to account for @kumar2022econometric's finding that external factors significantly influence cocoa prices. 
+
+Building on @sukiyono2018cacao's evaluation approach, we employ multiple performance metrics such as Root Mean Squared Error (RMSE), Mean Average Error (MAE), and Mean Average Percentage Error (MAPE) for comprehensive accuracy assessment across model types. This integrated approach aims to develop a forecasting framework specifically tailored to global cocoa price dynamics.
+
+# Methodology {#sec-method}
+This section outlines our approach to modeling and forecasting cocoa futures prices, detailing the selection rationale, data preparation techniques, model specifications, and validation methodology.
+
+## Model Selection Rationale
+Building on findings from @zhang2020forecasting that no single model is universally optimal for commodity price forecasting, we implemented a diverse modeling framework incorporating:
+
+1. **Linear Regression with Exogenous Variables**: As a baseline approach that captures linear relationships between cocoa prices and various predictors, including lagged price values and climate variables.
+
+2. **Machine Learning Models** (XGBoost, Random Forest, SVR): To capture potential nonlinear relationships in the data that traditional time series models might miss. These models align with @zhang2020forecasting observation that advanced self-learning algorithms often outperform traditional statistical methods when modeling complex commodity price behaviors.
+
+3. **ARIMAX and SARIMAX**: Extending the traditional ARIMA models (identified by @sukiyono2018cacao as particularly effective for cocoa price forecasting) to incorporate exogenous climate variables and seasonal components.
+
+This multi-model approach allows us to assess which methodology best captures the complex dynamics of cocoa prices while addressing the "no free lunch" principle highlighted by @zhang2020forecasting.
+
+## Preprocessing Steps
+Our preprocessing workflow includes essential data preparation for robust time series modeling. We apply logarithmic transformation to cocoa prices to stabilize variance and normalize distributions, followed by differencing of log-transformed prices for ARIMAX and SARIMAX models to address non-stationarity confirmed by augmented Dickey-Fuller tests. For feature engineering, we create 7-day lagged price features to capture short-term autocorrelation patterns and incorporate lagged climate variables to account for delayed effects of weather conditions on cocoa production and market expectations. These steps ensure our models receive appropriately structured inputs while satisfying time series analysis requirements.
+
+## Model Specifications
+Our modeling approach employs multiple techniques with consistent configuration: Linear Regression using climate variables and 7-day lagged prices to predict log-transformed prices; Machine Learning models including XGBoost (gradient-boosted trees with moderate complexity), Random Forest (ensemble with default parameters), and SVR (radial basis kernel) all using identical features; and time series models including ARIMAX with exogenous climate predictors targeting log-transformed or differenced prices as needed, and SARIMAX configured to capture annual seasonal patterns with the same exogenous variables. This framework enables comparative evaluation across modeling paradigms while maintaining consistent feature inputs.
+
+## Training and Validation
+Addressing @kumar2022econometric methodology for robust model evaluation, we will implement:
+
+1. **Rolling Window Cross-Validation**:
+   - Training window: 360 days of historical data
+   - Forecasting horizon: 90 days forward
+   - Incremental window movement: 90 days
+   - This approach simulates real-world forecasting scenarios where only past information is available for model training
+
+2. **Performance Metrics**:
+   - **Root Mean Square Error (RMSE)**: Emphasizes larger prediction errors
+   - **Mean Absolute Error (MAE)**: Measures average absolute deviation
+   - **Mean Absolute Percentage Error (MAPE)**: Provides relative error measurement
+   - This comprehensive set of metrics aligns with @sukiyono2018cacao recommendation for multi-faceted model evaluation
+
+## Model Refinement
+Following the initial evaluation of all models, we will go through a refinement phase aimed to enhance predictive performance. Our tuning methodology focuses on exploring a targeted range of hyperparameters for the selected model types. For traditional time series models, we will investigate various ARIMA orders, limiting components to low values to prevent overfitting. For machine learning approaches, we examined the impact of parameters controlling model complexity, learning dynamics, and feature utilization.
+
+Throughout the refinement process, we will maintain rolling window validation framework to ensure consistent evaluation across parameter combinations. Performance metrics will be aggregated across all forecast windows, providing a robust assessment of each configuration's forecasting capability under various market conditions. This methodical approach to model refinement ensures that our final selected models balance complexity with predictive accuracy while addressing the specific characteristics of cocoa price data.
+
+# Data {#sec-data}
+## Overview
+The analysis utilizes two primary datasets: daily cocoa futures prices from @ICCO_cocoa_prices and climate data from Ghana provided by @NCEI_ghana_climate.
+
+Our analysis utilizes two complementary datasets: primary daily cocoa futures prices from the International Cocoa Organization (ICCO) spanning March 1994 to February 2025, providing comprehensive historical price movements across multiple market cycles; and secondary climate data from Ghana including daily precipitation and temperature metrics (average, maximum, minimum) from multiple weather stations. After cleaning to remove invalid entries and handle missing values, these datasets offer crucial market and environmental context, considering cocoa cultivation's high sensitivity to temperature and rainfall conditions that directly impact yield, quality, and ultimately market prices.
+
+## Data Cleaning
+```{r data-cleaning}
+#| echo: false
+#| warning: false
+#| message: false
+
+# Load libraries
+library(tidyverse)
+library(lubridate)
+library(kableExtra)
+library(dplyr)
+library(knitr)
+library(kableExtra)
+library(forecast)
+library(tseries)
+library(xgboost)
+library(randomForest)
+library(e1071)
+
+# Load Cocoa Price Data
+cocoa_prices <- read.csv(here::here("data/raw_data/Daily Prices_ICCO.csv"), stringsAsFactors = FALSE) %>%
+  mutate(
+    Date  = as.Date(Date, format = '%d/%m/%Y'),
+    Price = as.numeric(gsub(",", "", ICCO.daily.price..US..tonne.))
+  ) %>%
+  select(Date, Price) %>%
+  arrange(Date) %>%
+  # Remove any rows with invalid dates or non-positive prices
+  filter(!is.na(Date) & !is.na(Price) & Price > 0)
+
+# Load Ghana Weather Data
+ghana_weather <- read.csv(here::here("data/raw_data/Ghana_data.csv"), stringsAsFactors = FALSE) %>%
+  mutate(DATE = as.Date(DATE)) %>%
+  # Average weather variables for each date
+  group_by(DATE) %>%
+  summarise(
+    PRCP = mean(PRCP, na.rm = TRUE),
+    TAVG = mean(TAVG, na.rm = TRUE),
+    TMAX = mean(TMAX, na.rm = TRUE),
+    TMIN = mean(TMIN, na.rm = TRUE)
+  ) %>%
+  ungroup() %>%
+  arrange(DATE)
+
+# Inner join Cocoa Prices and Weather Data
+cocoa_data <- inner_join(
+  cocoa_prices,
+  ghana_weather,
+  by = c("Date" = "DATE")
+)
+
+# Fill missing weather values with nearest known values
+cocoa_data <- cocoa_data %>%
+  tidyr::fill(PRCP, TAVG, TMAX, TMIN, .direction = "downup") %>%
+  drop_na()
+```
+Our data preparation process involved several steps to ensure data quality and compatibility for time series modelling:
+
+1. **Date Standardization**: We converted date fields in both datasets to ensure consistent data type and arranged records chronologically.
+
+2. **Data Validation**: We filtered out invalid records, including rows with missing dates or non-positive prices from the cocoa price dataset.
+
+3. **Climate Data Aggregation**: For dates with multiple weather station readings, we calculated the average values for precipitation and temperature variables to create a single daily climate profile.
+
+4. **Dataset Integration**: We performed an inner join between the cocoa prices and Ghana's climate data using dates as the key. This approach ensured that our analysis only included days where both price and climate data were available.
+
+5. **Missing Value Treatment**: For occasional gaps in climate variables, we applied forward and backward filling using `tidyr::fill(..., .direction = "downup")` to maintain continuity in the time series.
+
+A detailed implementation of these steps can be found in Appendix @sec-data-cleaning.
+
+## Log Transformations and Differencing
+```{r log-transform}
+#| echo: false
+#| warning: false
+#| message: false
+
+# Log transformation, differencing
+cocoa_data <- cocoa_data %>%
+  mutate(
+    log_price = log(Price),
+    diff_log_price = c(NA, diff(log_price))
+  ) %>%
+  drop_na()
+```
+
+```{r}
+#| label: fig-raw-price-graph
+#| fig-cap: "Daily cocoa futures prices (USD/tonne) from 1994 to 2025"
+#| echo: false
+#| warning: false
+#| message: false
+
+ggplot(cocoa_data, aes(x = Date)) +
+  geom_line(aes(y = Price), color = "red") +
+  labs(y = "Price", x = "Date") +
+  theme_minimal()
+```
+
+```{r}
+#| label: fig-log-price-graph
+#| fig-cap: "Logarithmically transformed cocoa prices"
+#| echo: false
+#| warning: false
+#| message: false
+
+ggplot(cocoa_data, aes(x = Date)) +
+  geom_line(aes(y = log_price), color = "blue") +
+  labs(y = "Log(Price)", x = "Date") +
+  theme_minimal()
+```
+
+```{r}
+#| label: fig-fist-diff-price-graph
+#| fig-cap: "First differences of logarithmically transformed cocoa prices"
+#| echo: false
+#| warning: false
+#| message: false
+
+ggplot(cocoa_data, aes(x = Date)) +
+  geom_line(aes(y = diff_log_price), color = "purple") +
+  labs(y = "Diff(Log(Price))", x = "Date") +
+  theme_minimal()
+```
+
+As shown in @fig-raw-price-graph, the raw cocoa price data exhibits substantial volatility and a strong upward trend, particularly in recent years. This non-stationary behavior is typical of commodity price series and requires transformation before applying time series modeling techniques.
+
+To address these characteristics, we implemented two key transformations:
+
+1. **Logarithmic transformation**: We converted the raw prices to natural logarithm scale which helps normalize the variance across the entire series. As evident in @fig-log-price-graph, this transformation preserves the overall pattern while reducing the disproportionate impact of recent price surges, creating a more consistent variance structure throughout the time series.
+
+2. **First differencing**: To remove the persistent trend component and achieve stationarity, we calculated the first-order differences of the log-transformed prices. @fig-fist-diff-price-graph demonstrates how this transformation effectively stabilizes the series around a zero mean with consistent variance across time, except for several volatility clusters that correspond to significant market events.
+
+These transformations are critical preprocessing steps that address key assumptions of time series modeling, namely stationarity and homoscedasticity. The differenced log series offers a more suitable foundation for our forecasting models, as confirmed by subsequent stationarity tests.
+
+
+## Stationarity and Exploratory Checks 
+```{r stationarity}
+#| echo: false
+#| warning: false
+#| message: false
+
+# STL decomposition on log price
+ts_log_price <- ts(cocoa_data$log_price, frequency = 365)
+decomp <- stl(ts_log_price, s.window = "periodic")
+
+### Commented out to allow plots to show in main report section
+# plot(decomp, main="STL Decomposition of Log(Price)")
+# 
+# # Augmented Dickey-Fuller Tests
+# cat("ADF Test on log_price:\n")
+# print(adf.test(cocoa_data$log_price))
+# cat("\nADF Test on 1st diff_log_price:\n")
+# print(adf.test(cocoa_data$diff_log_price))
+```
+
+```{r}
+#| label: fig-stl-decomp
+#| fig-cap: "STL decomposition of log-transformed cocoa prices showing the original series (top), seasonal patterns (second panel), underlying trend (third panel), and residual variations (bottom panel)"
+#| echo: false
+#| warning: false
+#| message: false
+
+plot(decomp, main="STL Decomposition of Log(Price)")
+
+# Augmented Dickey-Fuller Tests
+cat("ADF Test on log_price:\n")
+print(adf.test(cocoa_data$log_price))
+cat("\nADF Test on 1st diff_log_price:\n")
+print(adf.test(cocoa_data$diff_log_price))
+```
+To assess the statistical properties of our cocoa price series, we performed diagnostics focusing on component decomposition and stationarity testing:
+
+1. **STL Decomposition**: @fig-stl-decomp displays the Seasonal-Trend decomposition using LOESS for the log-transformed price series. This visualization clearly separates the time series into four components:
+   - The original log-price data (top panel)
+   - A distinct seasonal pattern with consistent annual cycles (second panel)
+   - The underlying long-term trend showing major market shifts (third panel)
+   - The residual component capturing market noise and irregular events (bottom panel)
+
+   The decomposition reveals a pronounced seasonal pattern in cocoa prices that repeats annually, likely reflecting harvest cycles in major producing regions. The trend component closely mirrors our earlier observations of price evolution, while the residual component appears largely stationary with occasional volatility clusters.
+
+2. **Augmented Dickey-Fuller Tests**: We conducted formal stationarity tests to validate our transformation strategy:
+   - The log-transformed price series yielded a test statistic of -1.5883 with a p-value of 0.7527, failing to reject the null hypothesis of non-stationarity
+   - In contrast, the first-differenced log prices produced a test statistic of -19.822 with a p-value of 0.01, strongly rejecting the null hypothesis
+
+   These results provide statistical confirmation that while the original log prices exhibit unit root behavior characteristic of financial time series, the first-differenced series achieves the stationarity required for valid time series modeling.
+
+The combined evidence from both visual decomposition and formal hypothesis testing provides a strong foundation for our modeling approach, confirming that differencing was an appropriate and necessary transformation for this dataset.
+
+
+## Feature Engineering
+```{r feature-engineering}
+#| echo: false
+#| warning: false
+#| message: false
+
+# Helper functions to create lag features
+create_lags <- function(data, var="log_price", lag_days = c(7)) {
+  for (lag_val in lag_days) {
+    data[[paste0("lag_", lag_val)]] <- dplyr::lag(data[[var]], lag_val)
+  }
+  data
+}
+
+create_lagged_climate <- function(data, 
+                                  vars = c("PRCP", "TAVG", "TMAX", "TMIN"), 
+                                  lag_days = c(7)) {
+  for (var in vars) {
+    for (l in lag_days) {
+      new_col <- paste0(var, "_lag", l)
+      data[[new_col]] <- dplyr::lag(data[[var]], l)
+    }
+  }
+  data
+}
+
+cocoa_data_lagged <- cocoa_data %>%
+  create_lags(var = "log_price", lag_days = c(7)) %>%
+  create_lagged_climate(vars = c("PRCP", "TAVG", "TMAX", "TMIN"), 
+                        lag_days = c(7)) %>%
+  drop_na()  # Drop rows that are missing due to lag creation
+```
+To enhance our models' predictive power, we created additional features:
+
+1. **Lagged Price Variables**: We incorporated 7-day lagged values of log-transformed prices to capture autocorrelation patterns.
+
+2. **Lagged Climate Variables**: Similarly, we created 7-day lags for precipitation and temperature variables to account for delayed effects of weather conditions on market expectations and cocoa production.
+
+These engineered features provide our models with temporal context and potential predictors that reflect the complex relationships between climate factors, historical prices, and future price movements. 
+
+Implementation of the log-transformation, differencing, stationarity check, and feature engineering steps can be found in Appendix @sec-data-preprocess.
+
+
+# Results {#sec-results}
+```{r time-series-cv}
+#| echo: false
+#| warning: false
+#| message: false
+
+cv_folds <- list()
+start_idx <- 1
+step <- 90
+train_window <- 360
+test_window <- 90
+n <- nrow(cocoa_data_lagged)
+
+while ((start_idx + train_window + test_window - 1) <= n) {
+  end_train_idx <- start_idx + train_window - 1
+  end_test_idx <- end_train_idx + test_window
+  cv_folds[[length(cv_folds) + 1]] <- list(
+    train_indices = start_idx:end_train_idx,
+    test_indices = (end_train_idx + 1):end_test_idx
+  )
+  start_idx <- start_idx + step
+}
+```
+
+```{r baseline-models}
+#| echo: false
+#| warning: false
+#| message: false
+
+# Evaluation metrics
+rmse_func <- function(actual, predicted) sqrt(mean((actual - predicted)^2))
+mae_func  <- function(actual, predicted) mean(abs(actual - predicted))
+mape_func <- function(actual, predicted) {
+  mean(abs((actual - predicted)/actual)) * 100
+}
+
+results <- data.frame(
+  Fold = integer(),
+  Model = character(),
+  RMSE = numeric(),
+  MAE = numeric(),
+  MAPE = numeric(),
+  stringsAsFactors = FALSE
+)
+
+for (fold_i in seq_along(cv_folds)) {
+  train_idx <- cv_folds[[fold_i]]$train_indices
+  test_idx  <- cv_folds[[fold_i]]$test_indices
+
+  train_fold <- cocoa_data_lagged[train_idx, ]
+  test_fold  <- cocoa_data_lagged[test_idx, ]
+
+  # Features: lags + climate variables
+  x_cols <- c(grep("^lag_", names(train_fold), value=TRUE),
+              "PRCP", "TAVG", "TMAX", "TMIN")
+
+  train_x <- train_fold[, x_cols]
+  test_x  <- test_fold[, x_cols]
+  train_y <- train_fold$log_price
+  test_y  <- test_fold$log_price
+
+  # 1) Linear Regression
+  lm_model <- lm(train_y ~ ., data=train_x)
+  lm_pred_log <- predict(lm_model, newdata=test_x)
+  lm_rmse  <- rmse_func(test_y, lm_pred_log)
+  lm_mae   <- mae_func(test_y, lm_pred_log)
+  lm_mape  <- mape_func(test_y, lm_pred_log)
+
+  results <- rbind(results, data.frame(
+    Fold=fold_i, Model="LinearRegression", RMSE=lm_rmse, MAE=lm_mae, MAPE=lm_mape
+  ))
+
+  # 2) XGBoost
+  dtrain <- xgb.DMatrix(as.matrix(train_x), label=train_y)
+  dtest  <- xgb.DMatrix(as.matrix(test_x))
+
+  xgb_fit <- xgboost(data=dtrain, objective="reg:squarederror",
+                     nrounds=50, verbose=0)
+
+  xgb_pred_log <- predict(xgb_fit, dtest)
+  xgb_rmse <- rmse_func(test_y, xgb_pred_log)
+  xgb_mae  <- mae_func(test_y, xgb_pred_log)
+  xgb_mape <- mape_func(test_y, xgb_pred_log)
+
+  results <- rbind(results, data.frame(
+    Fold=fold_i, Model="XGBoost", RMSE=xgb_rmse, MAE=xgb_mae, MAPE=xgb_mape
+  ))
+
+  # 3) Random Forest
+  rf_fit <- randomForest(x=train_x, y=train_y)
+  rf_pred_log <- predict(rf_fit, newdata=test_x)
+  rf_rmse <- rmse_func(test_y, rf_pred_log)
+  rf_mae  <- mae_func(test_y, rf_pred_log)
+  rf_mape <- mape_func(test_y, rf_pred_log)
+
+  results <- rbind(results, data.frame(
+    Fold=fold_i, Model="RandomForest", RMSE=rf_rmse, MAE=rf_mae, MAPE=rf_mape
+  ))
+
+  # 4) SVR
+  svr_fit <- svm(train_x, train_y, type="eps-regression", kernel="radial")
+  svr_pred_log <- predict(svr_fit, newdata=test_x)
+  svr_rmse <- rmse_func(test_y, svr_pred_log)
+  svr_mae  <- mae_func(test_y, svr_pred_log)
+  svr_mape <- mape_func(test_y, svr_pred_log)
+
+  results <- rbind(results, data.frame(
+    Fold=fold_i, Model="SVR", RMSE=svr_rmse, MAE=svr_mae, MAPE=svr_mape
+  ))
+
+  # 5) ARIMAX
+  # Build time series from the training portion
+  ts_train <- ts(train_fold$log_price, frequency=365)
+  xreg_train <- as.matrix(train_fold %>% select(PRCP, TAVG, TMAX, TMIN))
+
+  # Fit ARIMAX
+  arimax_fit <- auto.arima(ts_train, xreg=xreg_train, seasonal=FALSE)
+
+  # Forecast
+  xreg_test <- as.matrix(test_fold %>% select(PRCP, TAVG, TMAX, TMIN))
+  arimax_fc <- forecast(arimax_fit, xreg=xreg_test, h=nrow(test_fold))
+  arimax_pred_log <- as.numeric(arimax_fc$mean)
+
+  arimax_rmse <- rmse_func(test_y, arimax_pred_log)
+  arimax_mae  <- mae_func(test_y, arimax_pred_log)
+  arimax_mape <- mape_func(test_y, arimax_pred_log)
+
+  results <- rbind(results, data.frame(
+    Fold=fold_i, Model="ARIMAX", RMSE=arimax_rmse, MAE=arimax_mae, MAPE=arimax_mape
+  ))
+
+
+  # 6) SARIMAX
+  ts_train_seas <- ts(train_fold$log_price, frequency = 365)
+
+  # Create exogenous matrix for training
+  xreg_cols <- c(grep("^PRCP|^TAVG|^TMAX|^TMIN", names(train_fold), value = TRUE),
+                 grep("^lag_", names(train_fold), value = TRUE))
+  xreg_train_seas <- as.matrix(train_fold[, xreg_cols])
+
+  # Fit a Seasonal ARIMAX model
+  sarimax_fit <- auto.arima(
+    ts_train_seas,
+    xreg = xreg_train_seas,
+    seasonal = TRUE
+  )
+
+  # Forecast
+  xreg_test_seas <- as.matrix(test_fold[, xreg_cols])
+  sarimax_fc <- forecast(sarimax_fit, xreg = xreg_test_seas, h = nrow(test_fold))
+
+  sarimax_pred_log <- as.numeric(sarimax_fc$mean)
+  test_y <- test_fold$log_price
+
+  sarimax_rmse <- rmse_func(test_y, sarimax_pred_log)
+  sarimax_mae  <- mae_func(test_y, sarimax_pred_log)
+  sarimax_mape <- mape_func(test_y, sarimax_pred_log)
+
+  results <- rbind(results, data.frame(
+    Fold = fold_i, Model = "SARIMAX", RMSE = sarimax_rmse,
+    MAE = sarimax_mae, MAPE= sarimax_mape
+  ))
+}
+
+results_summary <- results %>%
+  group_by(Model) %>%
+  summarise(
+    Avg_RMSE = mean(RMSE),
+    Avg_MAE  = mean(MAE),
+    Avg_MAPE = mean(MAPE)
+  ) %>%
+  arrange(Avg_RMSE)
+
+```
+
+```{r refine-models-sarimax}
+#| echo: false
+#| warning: false
+#| message: false
+sarimax_grid <- expand.grid(
+  p = c(0,1),
+  d = c(1),        
+  q = c(0,1),
+  P = c(0,1),
+  D = c(0),     
+  Q = c(0,1)
+)
+
+results_sarimax <- data.frame(
+  p = integer(), d = integer(), q = integer(),
+  P = integer(), D = integer(), Q = integer(),
+  Avg_RMSE = numeric(), Avg_MAE = numeric(), Avg_MAPE = numeric(),
+  stringsAsFactors = FALSE
+)
+
+for (i in seq_len(nrow(sarimax_grid))) {
+  # Extract parameters from grid
+  p_ <- sarimax_grid$p[i]
+  d_ <- sarimax_grid$d[i]
+  q_ <- sarimax_grid$q[i]
+  P_ <- sarimax_grid$P[i]
+  D_ <- sarimax_grid$D[i]
+  Q_ <- sarimax_grid$Q[i]
+
+  fold_errors <- data.frame(RMSE=numeric(), MAE=numeric(), MAPE=numeric())
+
+  # Walk-forward CV
+  for (fold_i in seq_along(cv_folds)) {
+    train_idx <- cv_folds[[fold_i]]$train_indices
+    test_idx  <- cv_folds[[fold_i]]$test_indices
+
+    train_fold <- cocoa_data_lagged[train_idx, ]
+    test_fold  <- cocoa_data_lagged[test_idx, ]
+
+    # Create time series from training portion
+    ts_train <- ts(train_fold$log_price, frequency=365)
+
+    xreg_cols  <- setdiff(names(train_fold), c("Date","Price","log_price"))
+    xreg_train <- as.matrix(train_fold[, xreg_cols])
+    xreg_test  <- as.matrix(test_fold[, xreg_cols])
+
+    # Fit ARIMA in a tryCatch to handle occasional errors
+    fit_result <- tryCatch({
+      Arima(ts_train,
+            order = c(p_, d_, q_),
+            seasonal = list(order = c(P_, D_, Q_), period = 365),
+            xreg = xreg_train)
+    }, error = function(e) {
+      NA
+    })
+
+    # If model fitting failed, skip this combo
+    if (all(is.na(fit_result))) {
+      fold_errors <- rbind(fold_errors, data.frame(RMSE=NA, MAE=NA, MAPE=NA))
+    } else {
+      fc <- forecast(fit_result, xreg = xreg_test, h=nrow(test_fold))
+      pred_log <- as.numeric(fc$mean)
+      actual_log <- test_fold$log_price
+
+      fold_errors <- rbind(fold_errors, data.frame(
+        RMSE = rmse_func(actual_log, pred_log),
+        MAE  = mae_func(actual_log, pred_log),
+        MAPE = mape_func(actual_log, pred_log)
+      ))
+    }
+  }
+
+  # If the entire set of folds was NA, skip storing
+  if (!all(is.na(fold_errors$RMSE))) {
+    results_sarimax <- rbind(results_sarimax, data.frame(
+      p=p_, d=d_, q=q_, P=P_, D=D_, Q=Q_,
+      Avg_RMSE = mean(fold_errors$RMSE, na.rm=TRUE),
+      Avg_MAE  = mean(fold_errors$MAE,  na.rm=TRUE),
+      Avg_MAPE = mean(fold_errors$MAPE, na.rm=TRUE)
+    ))
+  }
+}
+
+results_sarimax <- results_sarimax %>% arrange(Avg_RMSE)
+```
+
+```{r refine-models-xgboost}
+#| echo: false
+#| warning: false
+#| message: false
+
+xgb_grid <- expand.grid(
+  max_depth    = c(3, 6),
+  eta          = c(0.05, 0.1),
+  colsample_bt = c(1.0, 0.8)
+)
+
+results_xgb <- data.frame(
+  max_depth = integer(), eta = numeric(), colsample_bt = numeric(),
+  Avg_RMSE = numeric(), Avg_MAE = numeric(), Avg_MAPE = numeric(),
+  stringsAsFactors = FALSE
+)
+
+for (i in seq_len(nrow(xgb_grid))) {
+  md  <- xgb_grid$max_depth[i]
+  lr  <- xgb_grid$eta[i]
+  cs  <- xgb_grid$colsample_bt[i]
+
+  fold_errors <- data.frame(RMSE=numeric(), MAE=numeric(), MAPE=numeric())
+
+  for (fold_i in seq_along(cv_folds)) {
+    train_idx <- cv_folds[[fold_i]]$train_indices
+    test_idx  <- cv_folds[[fold_i]]$test_indices
+
+    train_fold <- cocoa_data_lagged[train_idx, ]
+    test_fold  <- cocoa_data_lagged[test_idx, ]
+
+    # Features (excluding Date, Price, log_price)
+    xreg_cols <- setdiff(names(train_fold), c("Date","Price","log_price"))
+    train_x <- as.matrix(train_fold[, xreg_cols])
+    train_y <- train_fold$log_price
+    test_x  <- as.matrix(test_fold[, xreg_cols])
+    test_y  <- test_fold$log_price
+
+    dtrain <- xgb.DMatrix(train_x, label=train_y)
+    dtest  <- xgb.DMatrix(test_x)
+
+    xgb_params <- list(
+      objective        = "reg:squarederror",
+      max_depth        = md,
+      eta              = lr,
+      colsample_bytree = cs
+    )
+
+    # Fit XGB with small nrounds for demonstration
+    xgb_fit <- xgb.train(
+      params  = xgb_params,
+      data    = dtrain,
+      nrounds = 100,
+      verbose = 0
+    )
+
+    pred_log <- predict(xgb_fit, dtest)
+
+    fold_errors <- rbind(fold_errors, data.frame(
+      RMSE = rmse_func(test_y, pred_log),
+      MAE  = mae_func(test_y, pred_log),
+      MAPE = mape_func(test_y, pred_log)
+    ))
+  }
+
+  results_xgb <- rbind(results_xgb, data.frame(
+    max_depth = md,
+    eta       = lr,
+    colsample_bt = cs,
+    Avg_RMSE  = mean(fold_errors$RMSE),
+    Avg_MAE   = mean(fold_errors$MAE),
+    Avg_MAPE  = mean(fold_errors$MAPE)
+  ))
+}
+
+results_xgb <- results_xgb %>% arrange(Avg_RMSE)
+```
+
+This section presents the findings from our model implementation and refinement processes, focusing on performance metrics across multiple forecasting approaches. The full model implementation scripts can be found in Appendix @sec-model-scripts.
+
+## Model Implementation {#sec-model-implementation}
+Following our methodology outlined in @sec-method, we implemented six distinct modeling approaches for predicting cocoa futures prices: Linear Regression, XGBoost, Random Forest, SVR, ARIMAX, and SARIMAX. @tbl-baseline-models presents the cross-validated performance metrics for these baseline models.
+
+```{r}
+#| label: tbl-baseline-models
+#| tbl-cap: "Baseline Model Performance Metrics"
+#| echo: false
+#| warning: false
+#| message: false
+#| 
+kable(results_summary)
+```
+
+Linear Regression exhibited the lowest error rates across all metrics (RMSE = 0.0534, MAE = 0.0425, MAPE = 0.5504%), substantially outperforming more complex models. This represents approximately half the error rate of the worst-performing model (Random Forest). Among the more sophisticated approaches, SARIMAX demonstrated the second-best performance (RMSE = 0.0826), followed closely by XGBoost (RMSE = 0.0853). The traditional time series models and machine learning approaches showed considerably higher error rates, with RMSE values exceeding 0.10.
+
+## Selected Model Parameter Tuning {#sec-model-tuning}
+Based on the baseline performance, we selected the two most promising complex models, SARIMAX and XGBoost, for hyperparameter optimization to determine whether refined configurations could surpass the Linear Regression benchmark.
+
+### SARIMAX Tuning
+We explored various SARIMAX orders by testing combinations of autoregressive (p), differencing (d), moving average (q), seasonal autoregressive (P), seasonal differencing (D), and seasonal moving average (Q) parameters. @tbl-refined-sarimax in the Appendix shows the performance of these parameter configurations.
+
+The best-performing SARIMAX configuration was SARIMAX(1,1,1,0,0,0) with RMSE = 0.0910, MAE = 0.0764, and MAPE = 0.9878%. While this represents an improvement over some baseline models, it still underperforms compared to the Linear Regression benchmark. Notably, all tested SARIMAX configurations showed similar performance (RMSE ranging from 0.0910 to 0.0952), suggesting that model order selection had limited impact on forecast accuracy within our testing framework.
+
+### XGBoost Tuning
+Grid search optimization of XGBoost hyperparameters identified an optimal configuration (max_depth = 3, eta = 0.10, colsample_bt = 1.0) that achieved RMSE = 0.0812, representing a 5% improvement over the baseline XGBoost model but still underperforming compared to Linear Regression. Tuning revealed that simpler configurations with shallower trees, moderate learning rates, and full feature utilization produced better forecasts than more complex structures, suggesting that more generalizable models better suited our forecasting task than configurations prone to overfitting.
+
+## Forecast Visualization and Interpretation
+Visualization of model forecasts across representative time periods reveals significant differences in predictive behavior. As illustrated in @fig-forecast-comparison, Linear Regression successfully captures the downward price trend despite some delay and response attenuation, maintaining correct directional movement and gradually converging toward actual values. In contrast, the XGBoost model demonstrates minimal variation and fails to adapt to the evident price decline, suggesting overfitting to historical patterns. This visual comparison confirms our quantitative findings that despite its simplicity, Linear Regression better captures essential market dynamics than more complex models that struggle with emerging trends.
+
+# Discussion {#sec-discussion}
+## Interpretation of Model Performance
+The consistent superiority of Linear Regression across all evaluation metrics represents a noteworthy finding that warrants careful interpretation. Drawing on insights from our literature review and modeling results, we propose several explanations for this result.
+
+### Linear Relationships in Transformed Data
+The logarithmic transformation and first differencing applied to cocoa prices may have effectively linearized the underlying relationships between predictors and target variables. As demonstrated in our data exploration (@fig-stl-decomp), these transformations successfully removed non-stationary components and stabilized variance. @sukiyono2018cacao similarly found that appropriate preprocessing enhanced the performance of simpler models for cocoa price forecasting.
+
+Once these transformations were applied, the 7-day lagged price variables likely captured most of the short-term price dynamics through linear autocorrelation structures. This aligns with @kumar2022econometric's finding that first-order ARIMA models (essentially linear models with differencing) performed well for cocoa bean price prediction.
+
+A particularly notable finding is that while time series data typically benefit from models specifically designed to handle autocorrelated residuals (such as SARIMAX), our preprocessing steps appears to have linearized much of the price dynamics. The combination of logarithmic transformation, differencing, and engineered lag features effectively captured the autocorrelation structure that would otherwise require more complex modeling approaches. Consequently, the simpler linear regression model, incorporating lagged prices and climate variables, not only matched but outperformed SARIMAX in both accuracy and generalization capability. This supports the principle of parsimony in statistical modeling, suggesting that under appropriate preprocessing conditions, model simplicity can yield superior results compared to algorithmic complexity. This finding aligns with @zhang2020forecasting observation that model selection should be context-dependent rather than defaulting to more complex approaches.
+
+### Model Complexity and Data Constraints
+The "no free lunch" theorem highlighted by @zhang2020forecasting suggests that model performance is context-dependent. In our specific forecasting context (90-day horizons with daily data and limited external predictors) the data may not contain enough complex nonlinear patterns to justify sophisticated models. The more complex models may be attempting to capture nonlinear relationships that either:
+
+1. Don't exist in the data (leading to worse performance through overfitting)
+2. Exist but require additional external features to properly model
+
+This interpretation is supported by the observation that tuned XGBoost models with simpler structures (shallower trees, moderate learning rates) outperformed more complex configurations.
+
+### Forecast Horizon Effects
+The 90-day forecast horizon used in our rolling window validation framework may favor simpler models. @zhang2020forecasting specifically noted that forecast horizon significantly impacts model selection, with different model types excelling at different time scales. It's possible that Linear Regression is particularly well-suited for medium-term (90-day) cocoa price forecasting, while more complex models might demonstrate advantages at shorter or longer horizons.
+
+## Limitations and Future Research
+Despite the strong performance of our Linear Regression model, several limitations of our approach suggest directions for future research:
+
+### Feature Engineering Opportunities
+Our current feature set primarily leverages price lags and basic climate variables from Ghana. Future studies could incorporate:
+
+1. **Comprehensive climate indicators**: Including data from other major cocoa-producing regions such as Ivory Coast and Ecuador
+2. **Macroeconomic factors**: Currency exchange rates, particularly of major cocoa-producing nations, as suggested by @kumar2022econometric
+3. **Market sentiment indicators**: Futures market positioning data and commodity index fund flows
+4. **Expanded lagging structure**: Investigating optimal lag lengths and potentially incorporating autoregressive distributed lag (ARDL) frameworks
+
+### Methodological Extensions
+Several methodological improvements could enhance future forecasting accuracy:
+
+1. **Ensemble approaches**: Creating weighted combinations of models rather than selecting a single "best" model, potentially addressing the limitations highlighted by @zhang2020forecasting
+2. **Alternative seasonal modeling**: Exploring Fourier terms for seasonal modeling rather than relying on seasonal ARIMA components, which may be computationally challenging with high-frequency data
+
+### Expanded Validation Framework
+While our rolling window cross-validation approach provided robust performance estimates, future work could:
+
+1. **Test multiple forecast horizons**: Evaluating model performance across different time spans (e.g., 30, 90, 180 days) as suggested by @zhang2020forecasting
+2. **Stress test during volatile periods**: Specifically analyzing forecast accuracy during major market disruptions or supply shocks
+
+## Practical Implications
+From a business perspective, our findings offer valuable insights for participants in the cocoa market:
+
+1. **Model parsimony**: The superior performance of Linear Regression suggests that commodity trading firms might benefit from simpler, more maintainable forecasting models rather than investing in highly complex approaches
+2. **Data transformation importance**: The significant performance improvements achieved through appropriate logarithmic transformation and differencing highlight the critical role of preprocessing in agricultural commodity forecasting
+3. **Feature relevance**: Our results suggest that historical price patterns and basic climate variables provide substantial predictive power, potentially allowing market participants to develop effective forecasting systems with accessible data sources
+
+These practical implications align with the objectives outlined in our introduction, offering actionable insights for stakeholders involved in cocoa production, trading, and procurement strategies.
+
+
+\newpage
+\appendix
+# Appendix {-}
+# Additional Figures & Tables {#sec-figures}
+```{r}
+#| label: tbl-refined-sarimax
+#| tbl-cap: "Tuned SARIMAX model performance metrics"
+#| echo: false
+#| warning: false
+#| message: false
+#| 
+kable(results_sarimax)
+```
+
+```{r}
+#| label: tbl-refined-xgboost
+#| tbl-cap: "Tuned XGBoost model performance metrics"
+#| echo: false
+#| warning: false
+#| message: false
+kable(results_xgb)
+```
+
+```{r}
+#| label: fig-forecast-comparison
+#| fig-cap: "Comparison of actual vs. predicted log-prices for Linear Regression and XGBoost models on a representative cross-validation fold (35)"
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 10
+#| fig-height: 6
+
+fold_idx <- 34
+train_idx <- cv_folds[[fold_idx]]$train_indices
+test_idx <- cv_folds[[fold_idx]]$test_indices
+
+train_fold <- cocoa_data_lagged[train_idx, ]
+test_fold <- cocoa_data_lagged[test_idx, ]
+
+x_cols <- c(grep("^lag_", names(train_fold), value=TRUE),
+           "PRCP", "TAVG", "TMAX", "TMIN")
+
+train_x <- train_fold[, x_cols]
+test_x <- test_fold[, x_cols]
+train_y <- train_fold$log_price
+test_y <- test_fold$log_price
+
+# Linear Regression
+lm_model <- lm(train_y ~ ., data=train_x)
+lm_pred_log <- predict(lm_model, newdata=test_x)
+
+# Tuned XGBoost
+dtrain <- xgb.DMatrix(as.matrix(train_x), label=train_y)
+dtest <- xgb.DMatrix(as.matrix(test_x))
+
+xgb_params <- list(
+  objective = "reg:squarederror",
+  max_depth = 3,
+  eta = 0.10,
+  colsample_bytree = 1.0
+)
+
+xgb_fit <- xgb.train(
+  params = xgb_params,
+  data = dtrain,
+  nrounds = 100,
+  verbose = 0
+)
+
+xgb_pred_log <- predict(xgb_fit, dtest)
+
+forecast_df <- data.frame(
+  Date = test_fold$Date,
+  Actual = test_y,
+  LinearRegression = lm_pred_log,
+  XGBoost = xgb_pred_log
+)
+
+# Convert to long format for ggplot
+forecast_long <- tidyr::pivot_longer(
+  forecast_df, 
+  cols = c("Actual", "LinearRegression", "XGBoost"),
+  names_to = "Model", 
+  values_to = "LogPrice"
+)
+
+# Create the plot
+ggplot(forecast_long, aes(x = Date, y = LogPrice, color = Model)) +
+  geom_line(aes(linetype = Model), linewidth = 1) +
+  scale_color_manual(values = c("Actual" = "black", 
+                               "LinearRegression" = "blue", 
+                               "XGBoost" = "red")) +
+  labs(
+    x = "Date",
+    y = "Log Price"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+ 
+\newpage
+# Data Cleaning Scripts {#sec-data-cleaning}
+```{r, results='asis', echo=FALSE}
+code <- knitr::knit_code$get("data-cleaning")
+cat("```r\n", paste(code, collapse = "\n"), "\n```")
+```
+
+# Data Preprocessing Scripts {#sec-data-preprocess}
+## Log Transformations and Differencing
+```{r, results='asis', echo=FALSE}
+code <- knitr::knit_code$get("log-transform")
+cat("```r\n", paste(code, collapse = "\n"), "\n```")
+```
+
+## Stationarity and Exploratory Checks
+```{r, results='asis', echo=FALSE}
+code <- knitr::knit_code$get("stationarity")
+cat("```r\n", paste(code, collapse = "\n"), "\n```")
+```
+
+## Feature Engineering
+```{r, results='asis', echo=FALSE}
+code <- knitr::knit_code$get("data-cleaning")
+cat("```r\n", paste(code, collapse = "\n"), "\n```")
+```
+
+# Model Scripts {#sec-model-scripts}
+## Time Series Cross-validation
+```{r, results='asis', echo=FALSE}
+code <- knitr::knit_code$get("time-series-cv")
+cat("```r\n", paste(code, collapse = "\n"), "\n```")
+```
+
+## Baseline Model Implementation
+```{r, results='asis', echo=FALSE}
+code <- knitr::knit_code$get("baseline-models")
+cat("```r\n", paste(code, collapse = "\n"), "\n```")
+```
+
+## Model Refinement Implementation
+```{r, results='asis', echo=FALSE}
+code <- knitr::knit_code$get("refine-models-sarimax")
+cat("```r\n", paste(code, collapse = "\n"), "\n```")
+```
+
+```{r, results='asis', echo=FALSE}
+code <- knitr::knit_code$get("refine-models-xgboost")
+cat("```r\n", paste(code, collapse = "\n"), "\n```")
+```
+
+
+\newpage
+# References
