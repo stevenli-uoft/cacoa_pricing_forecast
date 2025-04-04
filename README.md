@@ -1,1 +1,5 @@
-# cacoa_pricing_forecast
+# Climate-Informed Cocoa Price Forecasting
+
+## Overview
+
+This repository contains the analysis and code for forecasting cocoa futures prices by integrating climate data from Ghana with various time series and machine learning approaches. We analyzed daily price data spanning from 1994 to 2025 alongside climate variables (temperature and precipitation) using multiple modeling techniques, including Linear Regression, ARIMA variants, and machine learning methods. Our approach employs cross-validated 90-day forecasting horizons with appropriate logarithmic transformation and differencing of price data. Key findings reveal that simpler Linear Regression models consistently outperformed more complex approaches across all metrics, achieving approximately 50% lower error rates (RMSE = 0.0534) than the worst-performing models. These results suggest that preprocessing techniques and model parsimony may be more crucial for accurate cocoa price forecasting than algorithmic complexity, offering practical implications for commodity traders and policymakers seeking reliable forecasting tools amid increasing market volatility.
